@@ -16,7 +16,8 @@ class App extends Component {
             login: false,
             mess: '',
             name: "",
-            hi: "Hi: "
+            hi: "Hi: ",
+            history:[]
         }
     }
 
@@ -25,31 +26,33 @@ class App extends Component {
         socket.on('connect', () => {
             console.log('Connected to server')
             // История сообщений
-            socket.on('history', history => console.log('history', history))
+            socket.on('history', history => {
+                this.setState({history:history})
+            })
             // список пользователей онлайн
             socket.on('online', list => {
                 this.setState({online: list})
             })
             // никнейм присоединившегося пользователя
             socket.on('connected', nickname => {
-                let mess = this.state.messages
+                let mess = this.state.history
                 let user = {nickname: "User " + nickname + " connected"}
                 mess.push(user)
-                this.setState({messages: mess})
+                this.setState({history: mess})
             })
             // никнейм отсоеденившегося пользователя
             socket.on('disconnected', nickname => {
-                let mess = this.state.messages
+                let mess = this.state.history
                 let user = {nickname: "User " + nickname + " disconnected"}
                 mess.push(user)
-                this.setState({messages: mess})
+                this.setState({history: mess})
             })
             // сообщение от пользователя
             socket.on('message', message => {
-                let mess = this.state.messages
+                let mess = this.state.history
                 mess.push(message)
-                this.setState({messages: mess})
-                document.getElementById('mes').scroll(400, document.getElementById('mes').scrollHeight);
+                this.setState({history: mess})
+                document.getElementById('mes').scroll(0, document.getElementById('mes').scrollHeight);
             })
         })
     }
@@ -79,15 +82,17 @@ class App extends Component {
     }
 
     render() {
+        let history = this.state.history.slice(this.state.history.length-20, this.state.history.length);
+        let filter = this.state.history == null?(this.state.mess):history
         let online = this.state.online.map((value, index) => {
             return (
                 <li key={index}><img alt="" width="40" src={require("../img/images.jpg")}/><p>{value}</p></li>
             )
         })
-        let mess = this.state.messages.map((value, index) => {
+        let mess = filter.map((value, index) => {
             return (
-                <li className={css(styles.mess)} key={index}><span>{value.nickname}</span> <span>{value.message}</span>
-                    <span>{value.date}</span>
+                <li className={css(styles.mess)} key={index}><span>{value.nickname}</span> <span  className={css(styles.messText)} >{value.message}</span>
+                    <div className={css(styles.time)}><p className={css(styles.time)}>{value.date}</p></div>
                 </li>
             )
         });
@@ -133,6 +138,12 @@ class App extends Component {
 export default App;
 
 const styles = StyleSheet.create({
+    messText:{
+      padding:"0 10px"
+    },
+    time:{
+      width:200
+    },
     user: {
         fontFamily: "cursive",
         marginTop: 15,
